@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice AI Studio</title>
+    <!-- Import Inter and JetBrains Mono for a highly premium technical look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Premium Dark Theme variables - Inspired by Linear/Vercel */
+            --bg-base: #000000;
+            --bg-surface: #0a0a0a;
+            --bg-surface-elevated: #141414;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.16);
+            --text-primary: #ededed;
+            --text-secondary: #a1a1aa;
+            --brand-primary: #f8fafc;
+            --brand-accent: #3b82f6; 
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            /* Subtle radial glows for depth */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Layout Grid */
+        .layout-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 24px;
+            height: calc(100vh - 80px);
+            min-height: 600px;
+        }
+
+        /* Generic Panels */
+        .pane {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* Controls Panel (Left) */
+        .brand-header { margin-bottom: 40px; }
+        .brand-header h1 {
+            font-size: 1.5rem; 
+            font-weight: 600; 
+            letter-spacing: -0.04em;
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        .brand-header h1 span { 
+            background: linear-gradient(180deg, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand-header h1 svg { color: var(--brand-accent); }
+        .brand-header p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+
+        .control-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+        label { color: var(--text-secondary); font-size: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .input-base {
+            background: var(--bg-surface-elevated); 
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary); 
+            padding: 12px 16px; 
+            border-radius: 12px;
+            font-size: 0.9rem; 
+            font-family: inherit;
+            transition: all 0.2s ease; 
+            outline: none; 
+            width: 100%;
+            -webkit-appearance: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .input-base:focus {
+            border-color: var(--brand-accent); 
+            box-shadow: 0 0 0 1px var(--brand-accent), inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .search-row { display: flex; gap: 8px; }
+        
+        .btn {
+            background: var(--bg-surface-elevated); 
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary); 
+            padding: 10px 16px; 
+            border-radius: 12px;
+            font-size: 0.9rem; 
+            font-weight: 500; 
+            cursor: pointer;
+            transition: all 0.2s ease; 
+            display: inline-flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 8px;
+        }
+        .btn:hover:not(:disabled) { 
+            background: var(--border-hover); 
+        }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-primary {
+            background: var(--brand-primary); 
+            color: var(--bg-base); 
+            border: none; 
+            font-weight: 600;
+        }
+        .btn-primary:hover:not(:disabled) { 
+            transform: translateY(-1px); 
+            box-shadow: 0 4px 12px rgba(255,255,255,0.15); 
+            background: #ffffff; 
+        }
+
+        /* Dynamically listening styles driven by JS */
+        #startBtn.listening {
+            background: #ef4444 !important; 
+            color: white !important; 
+            animation: pulse-recording 2s infinite;
+        }
+        @keyframes pulse-recording { 
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
+        }
+
+        .checkbox-wrap {
+            display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px; text-transform: none; letter-spacing: normal;
+        }
+        .checkbox-wrap input { width: 16px; height: 16px; accent-color: var(--brand-accent); cursor: pointer; }
+
+        /* Output Panel (Right) */
+        .output-header { 
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border-subtle);
+        }
+        .output-header h2 { font-size: 1.1rem; font-weight: 500; color: #fff; display: flex; align-items: center; gap: 8px;}
+        .output-header h2::before { content: ""; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--text-secondary); }
+
+        #output {
+            flex-grow: 1; 
+            font-size: 1.5rem; 
+            line-height: 1.6; 
+            color: var(--text-primary);
+            font-weight: 400; 
+            overflow-y: auto; 
+            padding-right: 16px;
+            scrollbar-width: thin; 
+            scrollbar-color: var(--border-subtle) transparent;
+            font-family: inherit;
+            letter-spacing: -0.02em;
+        }
+        #output::-webkit-scrollbar { width: 4px; }
+        #output::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 10px; }
+        #output.empty { color: var(--text-secondary); opacity: 0.6; }
+
+        .actions-footer { margin-top: 24px; display: flex; gap: 12px; }
+        
+        /* Status Indicator modified to work with existing JS */
+        .status {
+            display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
+            border-radius: 100px; font-size: 0.8rem; font-weight: 500;
+            background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); 
+            margin-top: 24px; width: fit-content; transition: all 0.3s;
+        }
+        .status::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+        
+        /* Status states pushed by speech-recognition.js */
+        .status.info { color: var(--text-primary); }
+        .status.info::before { background: #3b82f6; }
+        
+        .status.listening { color: var(--text-primary); border-color: rgba(239, 68, 68, 0.3); }
+        .status.listening::before { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        
+        .status.success { color: var(--text-primary); }
+        .status.success::before { background: #10b981; }
+        
+        .status.error { color: var(--text-primary); border-color: rgba(244, 63, 94, 0.3); }
+        .status.error::before { background: #f43f5e; box-shadow: 0 0 8px #f43f5e; }
+
+        /* Popups, Alerts & Overlays - Minimalist redesign */
+        .popup-modal {
+            position: fixed; left: 50%; transform: translateX(-50%); z-index: 1000;
+            background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 16px 20px;
+            border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); display: flex; align-items: flex-start; gap: 12px;
+            transition: top 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s; opacity: 0; pointer-events: none; top: -100px;
+        }
+        
+        .popup-modal.show { top: 32px; opacity: 1; pointer-events: auto; }
+        
+        .popup-modal .popup-icon { font-size: 1.25rem; line-height: 1.2; }
+        .popup-content { min-width: 250px; }
+        .popup-title { font-weight: 500; font-size: 0.9rem; color: #fff; margin-bottom: 2px; }
+        .popup-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
+        
+        .popup-close { 
+            background: transparent; border: none; color: var(--text-secondary); 
+            cursor: pointer; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+        }
+        .popup-close:hover { background: var(--bg-surface-elevated); color: var(--text-primary); }
+
+        /* Search Results Overlay and Modal */
+        .search-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .search-overlay.show { opacity: 1; pointer-events: all; }
+        
+        .search-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -48%) scale(0.96);
+            background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 20px;
+            width: 100%; max-width: 640px; max-height: 80vh; z-index: 1001; opacity: 0; pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .search-modal.show { transform: translate(-50%, -50%) scale(1); opacity: 1; pointer-events: all; }
+        
+        .search-modal-header { 
+            padding: 20px 24px; border-bottom: 1px solid var(--border-subtle); 
+            display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);
+        }
+        .search-modal-header h2 { font-size: 1.1rem; font-weight: 500; margin: 0; color: #fff;}
+        
+        .search-modal-body { padding: 24px; overflow-y: auto; flex-grow: 1; }
+        
+        /* Spinner */
+        #searchLoading { text-align: center; padding: 60px 20px; }
+        .spinner {
+            width: 24px; height: 24px; border: 2px solid var(--border-subtle); border-top-color: var(--text-primary);
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Search Results Formatting overrides */
+        #searchResultText {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .timing-badge {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; width: 100%;
+            background: var(--bg-surface-elevated); color: var(--text-secondary); 
+            padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; font-weight: 500; font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border-subtle);
+        }
+        .ms-highlight { color: #fff; font-weight: 600;}
+        .data-source-text { color: var(--brand-accent); font-weight: 600; font-size: 0.95rem; }
+
+        /* Specifically catching ALL injected generic divs/styles from DB natively and via JS */
+        #searchResultText div[style] {
+            background: var(--bg-surface-elevated) !important;
+            border: 1px solid var(--border-subtle) !important;
+            border-radius: 12px !important;
+            padding: 20px !important;
+            margin-bottom: 0 !important;
+            color: var(--text-secondary) !important;
+        }
+        /* Style headings injected by DB */
+        #searchResultText h3, #searchResultText h4 { 
+            color: #fff; margin: 0 0 16px 0; font-weight: 500; font-size: 1.05rem; letter-spacing: -0.01em; 
+        }
+        /* Style strong tags acting as labels */
+        #searchResultText strong { 
+            color: var(--text-primary); font-weight: 500; font-size: 0.85rem; letter-spacing: 0.05em; 
+            display: inline-block; width: 140px; margin-bottom: 8px; text-transform: uppercase;
+        }
+        /* Fix ugly links */
+        #searchResultText a {
+            display: inline-flex; align-items: center; margin-top: 16px; height: 36px;
+            color: #fff; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);
+            padding: 0 16px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; transition: all 0.2s; font-weight: 500;
+        }
+        #searchResultText a:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); }
+
+        /* Panda Module */
+        .panda-container { z-index: 1000; position: fixed; bottom: -200px; right: 32px; transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .panda-container.show { bottom: 32px; }
+        .panda-wrapper { 
+            background: var(--bg-surface); padding: 8px; border-radius: 20px; border: 1px solid var(--border-subtle); 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); position: relative; 
+        }
+        .panda-gif { width: 120px; height: 120px; border-radius: 14px; object-fit: cover; }
+        .panda-speech-bubble {
+            background: #fff; color: #000; position: absolute; top: -45px; left: 50%; transform: translateX(-50%); 
+            padding: 8px 16px; border-radius: 100px; font-size: 0.95rem; font-weight: 600; white-space: nowrap; 
+            animation: bounce 0.6s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .panda-speech-bubble:after { 
+            content:''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); 
+            border-width: 6px; border-style: solid; border-color: #fff transparent transparent transparent; 
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .layout-wrapper { display: flex; flex-direction: column; height: auto; min-height: auto; }
+            .pane { padding: 24px; border-radius: 20px; }
+            #output { min-height: 250px; font-size: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        
+        <!-- Controls Panel -->
+        <div class="pane">
+            <div class="brand-header">
+                <h1>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    <span>SpeechCore</span>
+                </h1>
+                <p>Enterprise voice recognition & analytics powered by Web Speech API.</p>
+                
+                <div id="status" class="status info">
+                    Ready to start recording
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Language Model</label>
+                <select id="languageSelect" class="input-base">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="es-ES">Spanish (Spain)</option>
+                    <option value="fr-FR">French</option>
+                    <option value="de-DE">German</option>
+                    <option value="hi-IN">Hindi</option>
+                    <option value="zh-CN">Chinese (Simplified)</option>
+                </select>
+                
+                <label class="checkbox-wrap">
+                    <input type="checkbox" id="continuousMode" checked>
+                    Continuous Recognition Stream
+                </label>
+            </div>
+
+            <div class="control-group" style="margin-top: 8px;">
+                <label>Database Search Query</label>
+                <div class="search-row">
+                    <input type="text" id="searchInput" class="input-base" placeholder="Search knowledge base...">
+                    <button id="textSearchBtn" class="btn" style="padding: 0 16px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div style="flex-grow: 1;"></div>
+            
+            <button id="startBtn" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1rem; margin-top: 24px;">
+                Start Recording
+            </button>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="pane">
+            <div class="output-header">
+                <h2>Live Transcription</h2>
+                <button class="btn" id="copyBtn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    Copy Output
+                </button>
+            </div>
+            
+            <div id="output" class="empty">
+                Speech transcription stream will appear here...
+            </div>
+            
+            <div class="actions-footer">
+                <button id="stopBtn" class="btn" disabled style="flex:1;">Stop Recording</button>
+                <button id="clearBtn" class="btn" style="flex:1;">Clear Log</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- System Alerts -->
+    <div id="warningContainer" class="popup-modal warning">
+        <div class="popup-icon">⚠️</div>
+        <div class="popup-content">
+            <div class="popup-title">Content Warning</div>
+            <div class="warning-text popup-text">Inappropriate language detected.</div>
+        </div>
+        <button class="popup-close close-warning" onclick="hideWarning()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+
+    <div id="positiveContainer" class="popup-modal positive">
+        <div class="popup-icon" id="positiveEmoji">✨</div>
+        <div class="popup-content">
+            <div class="popup-title" id="positiveTitle">Positive Sentiment</div>
+            <div class="positive-text popup-text" id="positiveText">Great tone!</div>
+        </div>
+        <button class="popup-close close-positive" onclick="hidePositive()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+
+    <!-- Search Results View -->
+    <div id="searchOverlay" class="search-overlay" onclick="hideSearchResult()"></div>
+    <div id="searchResultContainer" class="search-modal">
+        <div class="search-modal-header">
+            <h2 id="searchResultTitle">Search Results</h2>
+            <button class="popup-close close-search" onclick="hideSearchResult()" style="background:var(--border-subtle); padding:6px; border-radius:50%;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="search-modal-body">
+            <div id="searchLoading">
+                <div class="spinner"></div>
+                <div style="color:var(--text-secondary); font-size: 0.9rem;">Querying Elasticsearch...</div>
+            </div>
+            <div id="searchResultContent" style="display: none;">
+                <!-- The JS appends timing badge inside searchResultText, so searchResultText is all we need here. -->
+                <div id="searchResultText"></div>
+            </div>
+            <div id="searchError" style="display: none;text-align:center;padding:40px;color:var(--text-secondary);font-size:0.9rem;">
+                No matching records found in database.
+            </div>
+        </div>
+    </div>
+
+    <!-- Panda Greeting Component -->
+    <div id="pandaContainer" class="panda-container">
+        <div class="panda-wrapper">
+            <button class="popup-close close-panda" style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.5); color:#fff; border-radius:50%; z-index:2; width:24px; height:24px;" onclick="hidePanda()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div class="panda-speech-bubble" id="pandaSpeech">Hi! 👋</div>
+            <img src="https://media.giphy.com/media/EatwJZRUIv41G/giphy.gif" alt="Panda" class="panda-gif">
+        </div>
+    </div>
+
+    <script src="profanity-list.js"></script>
+    <script src="search-database.js"></script>
+    <script src="speech-recognition.js?v=6"></script>
+</body>
+</html>

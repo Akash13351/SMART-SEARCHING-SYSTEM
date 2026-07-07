@@ -1,0 +1,32 @@
+{
+  "name": "speech-recognition-app-simple",
+  "version": "1.0.0",
+  "description": "Simple speech recognition application using Web Speech API (browser-based)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "speech",
+    "recognition",
+    "nodejs",
+    "express",
+    "web-speech-api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "^9.2.1",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "redis": "^5.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
