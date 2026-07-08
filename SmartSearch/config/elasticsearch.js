@@ -3,10 +3,10 @@ const { Client } = require('@elastic/elasticsearch');
 
 // Connect securely to your local Elasticsearch (with username and password)
 const esClient = new Client({
-  node: 'http://localhost:9200',
+  node: 'https://localhost:9200',
   auth: {
     username: 'elastic',
-    password: 'GQFVwiJfCUkja5xH8QGa' // Your newly setup password
+    password: 'oemh+blFXDyNfd_*x=or' // Your newly setup password
   },
   tls: {
     rejectUnauthorized: false // Required for default self-signed local certificates on Windows
